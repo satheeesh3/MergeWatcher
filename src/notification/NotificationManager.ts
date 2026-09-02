@@ -21,7 +21,7 @@ export class NotificationManager {
     }
   }
 
-  private async viewDiff(conflict: Conflict): Promise<void> {
+  async viewDiff(conflict: Conflict): Promise<void> {
     try {
       const localUri = vscode.Uri.file(path.join(conflict.repository.rootPath, conflict.file));
       const remoteUri = buildDiffUri({
@@ -36,7 +36,7 @@ export class NotificationManager {
     }
   }
 
-  private async openFile(conflict: Conflict): Promise<void> {
+  async openFile(conflict: Conflict): Promise<void> {
     try {
       const localUri = vscode.Uri.file(path.join(conflict.repository.rootPath, conflict.file));
       const document = await vscode.workspace.openTextDocument(localUri);

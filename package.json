@@ -28,6 +28,14 @@
       {
         "command": "gitConflictWatcher.checkNow",
         "title": "Git Conflict Watcher: Check Now"
+      },
+      {
+        "command": "gitConflictWatcher.showConflicts",
+        "title": "Git Conflict Watcher: Show Conflicts"
+      },
+      {
+        "command": "gitConflictWatcher.resumeWatchingAll",
+        "title": "Git Conflict Watcher: Resume Watching All Repositories"
       }
     ],
     "configuration": {
@@ -53,6 +61,12 @@
           "type": "boolean",
           "default": true,
           "description": "Show a warning notification when a potential conflict is detected."
+        },
+        "gitConflictWatcher.excludedRepositories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Repository names or paths to permanently exclude from watching."
         }
       }
     }

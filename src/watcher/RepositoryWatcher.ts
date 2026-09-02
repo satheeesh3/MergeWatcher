@@ -8,6 +8,15 @@ import { WatcherState } from './WatcherState';
 import { Logger } from '../utils/Logger';
 import { ErrorHandler } from '../utils/ErrorHandler';
 
+export interface CheckResult {
+  /** Current conflicts against the remote, recomputed fresh every cycle. */
+  conflicts: Conflict[];
+  /** True when these conflicts are for a remote commit not yet notified about. */
+  notify: boolean;
+}
+
+const NO_CONFLICTS: CheckResult = { conflicts: [], notify: false };
+
 /** Runs one check cycle (fetch, diff, detect) for a single repository. */
 export class RepositoryWatcher {
   private readonly git: GitManager;
@@ -18,37 +27,31 @@ export class RepositoryWatcher {
     this.branches = new BranchManager(this.git);
   }
 
-  async check(remote: string): Promise<Conflict[]> {
+  async check(remote: string): Promise<CheckResult> {
     const branch = await this.branches.getCurrentBranch();
     if (!branch) {
       Logger.info(`[${this.repository.name}] Not on a branch (detached HEAD); skipping.`);
-      return [];
+      return NO_CONFLICTS;
     }
 
     const hasRemote = await this.branches.hasRemoteBranch(remote, branch);
     if (!hasRemote) {
       Logger.info(`[${this.repository.name}] No ${remote}/${branch} tracking branch; skipping.`);
-      return [];
+      return NO_CONFLICTS;
     }
 
     try {
       await this.git.fetch(remote, branch);
     } catch (error) {
       ErrorHandler.handle(`[${this.repository.name}] fetch failed`, error);
-      return [];
+      return NO_CONFLICTS;
     }
 
     const remoteCommit = await this.git.getCommitHash(`${remote}/${branch}`);
-    const previousCommit = this.state.getLastRemoteCommit(this.repository.rootPath);
-
-    if (previousCommit === remoteCommit) {
-      return [];
-    }
-
     const localCommit = await this.git.getCommitHash('HEAD');
+
     if (remoteCommit === localCommit) {
-      await this.state.setLastRemoteCommit(this.repository.rootPath, remoteCommit);
-      return [];
+      return NO_CONFLICTS;
     }
 
     const mergeBase = await this.git.mergeBase('HEAD', remoteCommit);
@@ -57,8 +60,12 @@ export class RepositoryWatcher {
 
     const conflicts = ConflictDetector.detect(this.repository, branch, remoteCommit, diff);
 
-    await this.state.setLastRemoteCommit(this.repository.rootPath, remoteCommit);
+    const lastNotifiedCommit = this.state.getLastNotifiedCommit(this.repository.rootPath);
+    const notify = conflicts.length > 0 && lastNotifiedCommit !== remoteCommit;
+    if (notify) {
+      await this.state.setLastNotifiedCommit(this.repository.rootPath, remoteCommit);
+    }
 
-    return conflicts;
+    return { conflicts, notify };
   }
 }

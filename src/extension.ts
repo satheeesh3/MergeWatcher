@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { ConflictWatcher } from './watcher/ConflictWatcher';
 import { DiffContentProvider, DIFF_SCHEME } from './notification/DiffContentProvider';
+import { NotificationManager } from './notification/NotificationManager';
+import { ConflictPanel } from './notification/ConflictPanel';
 import { Configuration } from './config/Configuration';
 import { Logger } from './utils/Logger';
 
@@ -22,6 +24,20 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand('gitConflictWatcher.checkNow', () => {
       void watcher?.runCycle();
+    }),
+
+    vscode.commands.registerCommand('gitConflictWatcher.showConflicts', () => {
+      if (!watcher) {
+        return;
+      }
+      const panel = new ConflictPanel(new NotificationManager(), (rootPath, name) =>
+        watcher?.stopWatchingRepo(rootPath, name)
+      );
+      panel.show(watcher.getCurrentConflicts());
+    }),
+
+    vscode.commands.registerCommand('gitConflictWatcher.resumeWatchingAll', () => {
+      watcher?.resumeWatchingAll();
     }),
 
     vscode.workspace.onDidChangeConfiguration((event) => {
