@@ -1,0 +1,74 @@
+{
+  "name": "git-conflict-watcher",
+  "displayName": "Git Conflict Watcher",
+  "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
+  "version": "0.1.0",
+  "publisher": "local-dev",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "gitConflictWatcher.start",
+        "title": "Git Conflict Watcher: Start Watching"
+      },
+      {
+        "command": "gitConflictWatcher.stop",
+        "title": "Git Conflict Watcher: Stop Watching"
+      },
+      {
+        "command": "gitConflictWatcher.checkNow",
+        "title": "Git Conflict Watcher: Check Now"
+      }
+    ],
+    "configuration": {
+      "title": "Git Conflict Watcher",
+      "properties": {
+        "gitConflictWatcher.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the Git Conflict Watcher."
+        },
+        "gitConflictWatcher.intervalSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "description": "How often (in seconds) to fetch the remote and check for conflicts."
+        },
+        "gitConflictWatcher.remote": {
+          "type": "string",
+          "default": "origin",
+          "description": "The Git remote to compare against."
+        },
+        "gitConflictWatcher.notifyOnConflict": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a warning notification when a potential conflict is detected."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "mocha \"out/test/**/*.test.js\" --ui tdd"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "mocha": "^10.4.0",
+    "typescript": "^5.4.0"
+  }
+}
