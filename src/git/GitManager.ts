@@ -69,4 +69,14 @@ export class GitManager {
     const posixPath = filePath.split('\\').join('/');
     return this.run(`show ${commit}:"${posixPath}"`);
   }
+
+  /** Number of commits reachable from `range` (e.g. "a..b"). */
+  async revListCount(range: string): Promise<number> {
+    try {
+      const out = await this.run(`rev-list --count ${range}`);
+      return parseInt(out, 10) || 0;
+    } catch {
+      return 0;
+    }
+  }
 }

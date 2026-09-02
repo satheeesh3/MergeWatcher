@@ -26,14 +26,20 @@ export function activate(context: vscode.ExtensionContext): void {
       void watcher?.runCycle();
     }),
 
-    vscode.commands.registerCommand('gitConflictWatcher.showConflicts', () => {
+    vscode.commands.registerCommand('gitConflictWatcher.showStatus', () => {
       if (!watcher) {
         return;
       }
-      const panel = new ConflictPanel(new NotificationManager(), (rootPath, name) =>
-        watcher?.stopWatchingRepo(rootPath, name)
-      );
-      panel.show(watcher.getCurrentConflicts());
+      const panel = new ConflictPanel(new NotificationManager(), {
+        onStopWatchingRepo: (rootPath, name) => watcher?.stopWatchingRepo(rootPath, name),
+        onResumeWatchingRepo: (rootPath) => watcher?.resumeWatchingRepo(rootPath),
+        onRefresh: async () => {
+          await watcher?.runCycle();
+        },
+        getStatuses: () => watcher?.getRepositoryStatuses() ?? [],
+        getLastCheckedAt: () => watcher?.getLastCheckedAt()
+      });
+      panel.show();
     }),
 
     vscode.commands.registerCommand('gitConflictWatcher.resumeWatchingAll', () => {

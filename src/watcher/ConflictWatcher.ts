@@ -8,6 +8,8 @@ import { Logger } from '../utils/Logger';
 import { ErrorHandler } from '../utils/ErrorHandler';
 import { Conflict } from '../models/Conflict';
 import { Repository } from '../models/Repository';
+import { RepositoryStatus } from '../models/RepositoryStatus';
+import { formatElapsed } from '../utils/formatElapsed';
 
 export class ConflictWatcher {
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -19,8 +21,9 @@ export class ConflictWatcher {
   /** Repositories the user chose to stop watching for this session (in-memory only). */
   private readonly stoppedRepositories = new Set<string>();
 
-  /** Live conflict state, recomputed every cycle; drives both the status bar and the conflict panel. */
-  private currentConflicts: Conflict[] = [];
+  /** Live state for every discovered repository, recomputed every cycle; drives the status bar and panel. */
+  private repositoryStatuses: RepositoryStatus[] = [];
+  private lastCheckedAt: number | undefined;
 
   constructor(memento: vscode.Memento) {
     this.state = new WatcherState(memento);
@@ -51,7 +54,7 @@ export class ConflictWatcher {
       clearInterval(this.timer);
       this.timer = undefined;
     }
-    this.currentConflicts = [];
+    this.repositoryStatuses = [];
     Logger.info('Git Conflict Watcher stopped.');
     this.updateStatusBar('idle');
   }
@@ -60,16 +63,23 @@ export class ConflictWatcher {
     return this.running;
   }
 
-  getCurrentConflicts(): Conflict[] {
-    return this.currentConflicts;
+  getRepositoryStatuses(): RepositoryStatus[] {
+    return this.repositoryStatuses;
+  }
+
+  getLastCheckedAt(): number | undefined {
+    return this.lastCheckedAt;
   }
 
   /** Stops watching a single repository for the remainder of this VS Code session. */
   stopWatchingRepo(rootPath: string, name: string): void {
     this.stoppedRepositories.add(rootPath);
-    this.currentConflicts = this.currentConflicts.filter((c) => c.repository.rootPath !== rootPath);
     Logger.info(`Stopped watching "${name}" for this session.`);
-    this.updateStatusBar('watching', undefined, this.currentConflicts.length);
+  }
+
+  /** Resumes watching a single repository that was stopped for this session. */
+  resumeWatchingRepo(rootPath: string): void {
+    this.stoppedRepositories.delete(rootPath);
   }
 
   /** Resumes watching every repository stopped for this session (permanent exclusions in settings are unaffected). */
@@ -84,34 +94,44 @@ export class ConflictWatcher {
     }
 
     try {
-      const allRepositories = await RepositoryScanner.findRepositories();
-      const repositories = allRepositories.filter((repo) => this.isWatchable(repo));
+      const repositories = await RepositoryScanner.findRepositories();
 
       if (repositories.length === 0) {
-        this.currentConflicts = [];
+        this.repositoryStatuses = [];
+        this.lastCheckedAt = Date.now();
         this.updateStatusBar('watching', 0, 0);
         return;
       }
 
       const remote = Configuration.remote;
-      const allConflicts: Conflict[] = [];
+      const statuses: RepositoryStatus[] = [];
       const toNotify: Conflict[] = [];
 
       for (const repository of repositories) {
+        const skipReason = this.skipReason(repository);
+        if (skipReason) {
+          statuses.push(this.stoppedStatus(repository, skipReason));
+          continue;
+        }
+
         const watcher = new RepositoryWatcher(repository, this.state);
         try {
           const result = await watcher.check(remote);
-          allConflicts.push(...result.conflicts);
+          statuses.push(result.status);
           if (result.notify) {
-            toNotify.push(...result.conflicts);
+            toNotify.push(...result.status.conflicts);
           }
         } catch (error) {
           ErrorHandler.handle(`[${repository.name}] check failed`, error);
+          statuses.push(this.errorStatus(repository, 'Check failed. See output log for details.'));
         }
       }
 
-      this.currentConflicts = allConflicts;
-      this.updateStatusBar('watching', repositories.length, allConflicts.length);
+      this.repositoryStatuses = statuses;
+      this.lastCheckedAt = Date.now();
+
+      const conflictCount = statuses.reduce((sum, s) => sum + s.conflicts.length, 0);
+      this.updateStatusBar('watching', statuses.length, conflictCount);
 
       if (toNotify.length > 0) {
         Logger.warn(`Detected ${toNotify.length} potential conflict(s).`);
@@ -126,14 +146,47 @@ export class ConflictWatcher {
     }
   }
 
-  private isWatchable(repository: Repository): boolean {
+  private skipReason(repository: Repository): string | undefined {
     if (this.stoppedRepositories.has(repository.rootPath)) {
-      return false;
+      return 'Stopped for this session.';
     }
     const excluded = Configuration.excludedRepositories;
-    return !excluded.some(
-      (entry) => entry === repository.name || entry === repository.rootPath
-    );
+    if (excluded.some((entry) => entry === repository.name || entry === repository.rootPath)) {
+      return 'Excluded via gitConflictWatcher.excludedRepositories.';
+    }
+    return undefined;
+  }
+
+  private stoppedStatus(repository: Repository, note: string): RepositoryStatus {
+    return {
+      name: repository.name,
+      path: repository.rootPath,
+      branch: undefined,
+      status: 'stopped',
+      localCommit: undefined,
+      remoteCommit: undefined,
+      ahead: 0,
+      behind: 0,
+      conflicts: [],
+      lastChecked: Date.now(),
+      note
+    };
+  }
+
+  private errorStatus(repository: Repository, note: string): RepositoryStatus {
+    return {
+      name: repository.name,
+      path: repository.rootPath,
+      branch: undefined,
+      status: 'error',
+      localCommit: undefined,
+      remoteCommit: undefined,
+      ahead: 0,
+      behind: 0,
+      conflicts: [],
+      lastChecked: Date.now(),
+      note
+    };
   }
 
   private updateStatusBar(state: 'idle' | 'watching', repoCount = 0, conflictCount = 0): void {
@@ -144,14 +197,15 @@ export class ConflictWatcher {
       return;
     }
 
+    this.statusBar.command = 'gitConflictWatcher.showStatus';
+    const checkedLabel = this.lastCheckedAt ? `Last checked: ${formatElapsed(this.lastCheckedAt)}` : 'Checking…';
+
     if (conflictCount > 0) {
-      this.statusBar.text = `$(warning) Git Conflicts: ${conflictCount}`;
-      this.statusBar.tooltip = `${conflictCount} potential conflict(s). Click to view.`;
-      this.statusBar.command = 'gitConflictWatcher.showConflicts';
+      this.statusBar.text = `$(warning) Conflicts: ${conflictCount}`;
+      this.statusBar.tooltip = `${conflictCount} potential conflict(s) · ${repoCount} repositories watched · ${checkedLabel}`;
     } else {
-      this.statusBar.text = `$(check) Git Watcher: ${repoCount} repo${repoCount === 1 ? '' : 's'}`;
-      this.statusBar.tooltip = 'No potential conflicts detected. Click to check now.';
-      this.statusBar.command = 'gitConflictWatcher.checkNow';
+      this.statusBar.text = `$(check) No conflicts · ${repoCount} repo${repoCount === 1 ? '' : 's'}`;
+      this.statusBar.tooltip = `${repoCount} repositories watched · ${checkedLabel}. Click for details.`;
     }
   }
 

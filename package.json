@@ -2,7 +2,7 @@
   "name": "git-conflict-watcher",
   "displayName": "Git Conflict Watcher",
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "local-dev",
   "engines": {
     "vscode": "^1.85.0"
@@ -30,8 +30,8 @@
         "title": "Git Conflict Watcher: Check Now"
       },
       {
-        "command": "gitConflictWatcher.showConflicts",
-        "title": "Git Conflict Watcher: Show Conflicts"
+        "command": "gitConflictWatcher.showStatus",
+        "title": "Git Conflict Watcher: Show Status"
       },
       {
         "command": "gitConflictWatcher.resumeWatchingAll",
