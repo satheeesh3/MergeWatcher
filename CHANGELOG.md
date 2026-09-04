@@ -2,6 +2,45 @@
 
 All notable changes to the Git Conflict Watcher extension are documented here.
 
+## [0.1.7]
+
+### Changed
+- `GitManager` now uses `execFile` instead of `exec`, invoking `git` directly instead of spawning an intermediate shell per command — roughly halves the OS process count per git operation.
+- Folded the separate "does the remote tracking branch exist" check into the fetch attempt itself, removing one subprocess call per repository per cycle. `BranchManager` was a pure passthrough after this and has been removed.
+
+### Added
+- `gitConflictWatcher.maxConcurrentChecks` setting (default `4`) to cap how many repositories are checked at once — turn it down further on low-resource machines.
+
+### Fixed
+- Guard against a scheduled cycle starting while the previous one is still running (e.g. on a slow network), which could otherwise let cycles pile up and compound CPU/memory use.
+
+## [0.1.6]
+
+### Fixed
+- The "N repositories watched" count included repositories the user had stopped watching, so stopping 2 of 12 still showed "12 watched" instead of 10. The status bar and panel now report the actually-watched count, with a "(N stopped)" suffix when applicable.
+
+## [0.1.5]
+
+### Added
+- Visible busy feedback for Stop Watching / Resume Watching / Refresh in the panel — a placeholder message ("Stopping…", "Resuming… checking now", "Checking now…") with the busy spinner, held for a minimum duration so even the instant Stop Watching case is perceptible.
+- "Esc to close" hint in the panel title.
+
+## [0.1.4]
+
+### Changed
+- Collapsed the "stopped" repository row in the panel to a single line and renamed the label to "Stopped Watching", removing a redundant second detail line.
+
+## [0.1.3]
+
+### Fixed
+- Stop Watching only updated in-memory state; the cached status list wasn't touched, so the panel kept showing the old status until the next full cycle happened to run. It now updates immediately.
+- `runCycle` now checks repositories concurrently instead of one at a time, so a full refresh is bounded by the slowest single repository instead of the sum of all of them.
+
+## [0.1.2]
+
+### Fixed
+- Repository discovery spawned a `git` subprocess per candidate folder, sequentially, on every poll cycle (~1s of blocking overhead for a 12-repo workspace). Replaced with a plain `fs.existsSync` check for a `.git` entry — no process spawn needed, ~1000x faster in testing.
+
 ## [0.1.1]
 
 ### Changed

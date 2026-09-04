@@ -4,6 +4,11 @@
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
   "version": "0.1.7",
   "publisher": "local-dev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/satheeesh3/Conflict-Watcher.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },

@@ -11,15 +11,23 @@ merge base. If both sides touched overlapping lines in the same file, you get a 
 
 - Automatic discovery of Git repositories in the current workspace (including one level of subdirectories, for
   multi-repo folders).
-- Configurable polling interval, remote name, and notifications.
-- Status bar indicator showing watcher state and conflict count.
-- Warning notification with **View Diff** (local vs. remote) and **Open File** actions.
+- Live per-repository status (Synced / Behind / Conflict / Error / Stopped) shown in a status bar summary and a
+  click-through panel — not just a one-shot toast.
+- Warning notification, shown once per new remote commit, with **View Diff** (local vs. remote) and **Open File**
+  actions.
+- Conflict panel (click the status bar): lists every watched repository with a refresh button, and per-repository
+  **Open File**, **Stop Watching** (this session), and **Resume Watching** actions.
+- Repositories can be stopped for the current session from the panel, or permanently excluded via settings.
+- Configurable polling interval, remote name, notification behavior, and concurrency (tunable down on
+  lower-resource machines).
 
 ## Commands
 
 - `Git Conflict Watcher: Start Watching`
 - `Git Conflict Watcher: Stop Watching`
 - `Git Conflict Watcher: Check Now`
+- `Git Conflict Watcher: Show Status`
+- `Git Conflict Watcher: Resume Watching All Repositories`
 
 ## Settings
 
@@ -29,6 +37,8 @@ merge base. If both sides touched overlapping lines in the same file, you get a 
 | `gitConflictWatcher.intervalSeconds` | `30` | How often to fetch and check for conflicts. |
 | `gitConflictWatcher.remote` | `"origin"` | The Git remote to compare against. |
 | `gitConflictWatcher.notifyOnConflict` | `true` | Show a warning notification when a conflict is detected. |
+| `gitConflictWatcher.excludedRepositories` | `[]` | Repository names or paths to permanently exclude from watching. |
+| `gitConflictWatcher.maxConcurrentChecks` | `4` | How many repositories to check at once. Lower this on low-resource machines. |
 
 ## Development
 
@@ -44,4 +54,11 @@ Run unit tests with:
 
 ```
 npm test
+```
+
+Package a `.vsix` for local install/sharing with:
+
+```
+npx vsce package
+code --install-extension git-conflict-watcher-<version>.vsix
 ```
