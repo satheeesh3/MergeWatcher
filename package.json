@@ -2,7 +2,7 @@
   "name": "git-conflict-watcher",
   "displayName": "Git Conflict Watcher",
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "local-dev",
   "engines": {
     "vscode": "^1.85.0"
@@ -69,6 +69,12 @@
           },
           "default": [],
           "description": "Repository names or paths to permanently exclude from watching."
+        },
+        "gitConflictWatcher.maxConcurrentChecks": {
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "description": "How many repositories to fetch/check at the same time. Lower this on low-resource machines to reduce CPU and memory use."
         }
       }
     }

@@ -25,4 +25,9 @@ export class Configuration {
   static get excludedRepositories(): string[] {
     return this.section().get<string[]>('excludedRepositories', []);
   }
+
+  /** How many repositories to check concurrently. Lower this on low-resource machines. */
+  static get maxConcurrentChecks(): number {
+    return Math.max(1, this.section().get<number>('maxConcurrentChecks', 4));
+  }
 }

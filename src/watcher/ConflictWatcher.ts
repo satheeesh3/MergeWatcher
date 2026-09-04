@@ -10,6 +10,7 @@ import { Conflict } from '../models/Conflict';
 import { Repository } from '../models/Repository';
 import { RepositoryStatus } from '../models/RepositoryStatus';
 import { formatElapsed } from '../utils/formatElapsed';
+import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 
 export class ConflictWatcher {
   private timer: ReturnType<typeof setInterval> | undefined;
@@ -24,6 +25,9 @@ export class ConflictWatcher {
   /** Live state for every discovered repository, recomputed every cycle; drives the status bar and panel. */
   private repositoryStatuses: RepositoryStatus[] = [];
   private lastCheckedAt: number | undefined;
+
+  /** Guards against a scheduled cycle piling up on a still-running one (e.g. a slow network). */
+  private cycleInProgress = false;
 
   constructor(memento: vscode.Memento) {
     this.state = new WatcherState(memento);
@@ -95,9 +99,10 @@ export class ConflictWatcher {
   }
 
   async runCycle(): Promise<void> {
-    if (!Configuration.enabled) {
+    if (!Configuration.enabled || this.cycleInProgress) {
       return;
     }
+    this.cycleInProgress = true;
 
     try {
       const repositories = RepositoryScanner.findRepositories();
@@ -112,29 +117,27 @@ export class ConflictWatcher {
       const remote = Configuration.remote;
       const toNotify: Conflict[] = [];
 
-      // Each repo's fetch/diff is independent of the others, so run them concurrently
-      // instead of one-at-a-time -- a full cycle is then bounded by the slowest single
-      // repo rather than the sum of all of them.
-      const statuses = await Promise.all(
-        repositories.map(async (repository) => {
-          const skipReason = this.skipReason(repository);
-          if (skipReason) {
-            return this.stoppedStatus(repository, skipReason);
-          }
+      // Each repo's fetch/diff is independent of the others, so they can run concurrently
+      // instead of one-at-a-time -- but capped, so a large workspace doesn't spawn dozens of
+      // git processes at once on a low-resource machine.
+      const statuses = await mapWithConcurrency(repositories, Configuration.maxConcurrentChecks, async (repository) => {
+        const skipReason = this.skipReason(repository);
+        if (skipReason) {
+          return this.stoppedStatus(repository, skipReason);
+        }
 
-          const watcher = new RepositoryWatcher(repository, this.state);
-          try {
-            const result = await watcher.check(remote);
-            if (result.notify) {
-              toNotify.push(...result.status.conflicts);
-            }
-            return result.status;
-          } catch (error) {
-            ErrorHandler.handle(`[${repository.name}] check failed`, error);
-            return this.errorStatus(repository, 'Check failed. See output log for details.');
+        const watcher = new RepositoryWatcher(repository, this.state);
+        try {
+          const result = await watcher.check(remote);
+          if (result.notify) {
+            toNotify.push(...result.status.conflicts);
           }
-        })
-      );
+          return result.status;
+        } catch (error) {
+          ErrorHandler.handle(`[${repository.name}] check failed`, error);
+          return this.errorStatus(repository, 'Check failed. See output log for details.');
+        }
+      });
 
       this.repositoryStatuses = statuses;
       this.lastCheckedAt = Date.now();
@@ -150,6 +153,8 @@ export class ConflictWatcher {
       }
     } catch (error) {
       ErrorHandler.handle('Watcher cycle failed', error);
+    } finally {
+      this.cycleInProgress = false;
     }
   }
 

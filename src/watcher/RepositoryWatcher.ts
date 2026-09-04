@@ -1,5 +1,4 @@
 import { GitManager } from '../git/GitManager';
-import { BranchManager } from '../git/BranchManager';
 import { DiffAnalyzer } from '../conflict/DiffAnalyzer';
 import { ConflictDetector } from '../conflict/ConflictDetector';
 import { Repository } from '../models/Repository';
@@ -17,33 +16,26 @@ export interface CheckResult {
 /** Runs one check cycle (fetch, diff, detect) for a single repository. */
 export class RepositoryWatcher {
   private readonly git: GitManager;
-  private readonly branches: BranchManager;
 
   constructor(private readonly repository: Repository, private readonly state: WatcherState) {
     this.git = new GitManager(repository.rootPath);
-    this.branches = new BranchManager(this.git);
   }
 
   async check(remote: string): Promise<CheckResult> {
-    const branch = await this.branches.getCurrentBranch();
-    if (!branch) {
+    const current = await this.git.getBranchAndHead();
+    if (!current?.branch) {
       return this.result('error', { note: 'Not on a branch (detached HEAD).' });
     }
-
-    const hasRemote = await this.branches.hasRemoteBranch(remote, branch);
-    if (!hasRemote) {
-      return this.result('error', { branch, note: `No ${remote}/${branch} tracking branch.` });
-    }
+    const { branch, commit: localCommit } = current;
 
     try {
       await this.git.fetch(remote, branch);
     } catch (error) {
       ErrorHandler.handle(`[${this.repository.name}] fetch failed`, error);
-      return this.result('error', { branch, note: 'Fetch failed. See output log for details.' });
+      return this.result('error', { branch, note: `No ${remote}/${branch} tracking branch, or fetch failed.` });
     }
 
     const remoteCommit = await this.git.getCommitHash(`${remote}/${branch}`);
-    const localCommit = await this.git.getCommitHash('HEAD');
 
     if (remoteCommit === localCommit) {
       return this.result('synced', { branch, localCommit, remoteCommit });
