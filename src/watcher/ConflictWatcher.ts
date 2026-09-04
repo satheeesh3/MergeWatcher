@@ -94,7 +94,7 @@ export class ConflictWatcher {
     }
 
     try {
-      const repositories = await RepositoryScanner.findRepositories();
+      const repositories = RepositoryScanner.findRepositories();
 
       if (repositories.length === 0) {
         this.repositoryStatuses = [];
