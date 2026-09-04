@@ -83,6 +83,10 @@ function toItem(repo: RepositoryStatus): RepoItem {
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function summarize(repos: RepositoryStatus[], lastCheckedAt: number | undefined): string {
   const conflictCount = repos.reduce((sum, r) => sum + r.conflicts.length, 0);
   const checked = lastCheckedAt ? `Last checked: ${formatElapsed(lastCheckedAt)}` : 'Checking…';
@@ -107,7 +111,7 @@ export class ConflictPanel {
 
   show(): void {
     const quickPick = vscode.window.createQuickPick<RepoItem>();
-    quickPick.title = 'Git Conflict Watcher';
+    quickPick.title = 'Git Conflict Watcher  ·  Esc to close';
     quickPick.buttons = [REFRESH_BUTTON];
     quickPick.ignoreFocusOut = true;
 
@@ -131,14 +135,18 @@ export class ConflictPanel {
       }
     });
 
+    const runBusy = async (message: string, action: () => Promise<void> | void) => {
+      quickPick.busy = true;
+      quickPick.placeholder = message;
+      const MIN_VISIBLE_MS = 300;
+      await Promise.all([action(), sleep(MIN_VISIBLE_MS)]);
+      render();
+      quickPick.busy = false;
+    };
+
     quickPick.onDidTriggerButton((button) => {
       if (button === REFRESH_BUTTON) {
-        void (async () => {
-          quickPick.busy = true;
-          await this.callbacks.onRefresh();
-          render();
-          quickPick.busy = false;
-        })();
+        void runBusy('Checking now…', () => this.callbacks.onRefresh());
       }
     });
 
@@ -151,19 +159,13 @@ export class ConflictPanel {
       }
 
       if (event.button === STOP_WATCHING_BUTTON) {
-        this.callbacks.onStopWatchingRepo(repo.path, repo.name);
-        render();
+        void runBusy(`Stopping "${repo.name}"…`, () => this.callbacks.onStopWatchingRepo(repo.path, repo.name));
         return;
       }
 
       if (event.button === RESUME_WATCHING_BUTTON) {
         this.callbacks.onResumeWatchingRepo(repo.path);
-        void (async () => {
-          quickPick.busy = true;
-          await this.callbacks.onRefresh();
-          render();
-          quickPick.busy = false;
-        })();
+        void runBusy(`Resuming "${repo.name}"… checking now`, () => this.callbacks.onRefresh());
       }
     });
 
