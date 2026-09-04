@@ -43,7 +43,7 @@ const STATUS_LABEL: Record<RepoStatus, string> = {
   behind: 'Behind',
   conflict: 'Conflict',
   error: 'Error',
-  stopped: 'Stopped'
+  stopped: 'Stopped Watching'
 };
 
 function toItem(repo: RepositoryStatus): RepoItem {
@@ -59,7 +59,7 @@ function toItem(repo: RepositoryStatus): RepoItem {
     }
   } else if (repo.status === 'behind') {
     detail = `${repo.behind} commit${repo.behind === 1 ? '' : 's'} behind`;
-  } else if (repo.status === 'error' || repo.status === 'stopped') {
+  } else if (repo.status === 'error') {
     detail = repo.note;
   }
 
