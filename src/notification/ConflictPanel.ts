@@ -89,9 +89,12 @@ function sleep(ms: number): Promise<void> {
 
 function summarize(repos: RepositoryStatus[], lastCheckedAt: number | undefined): string {
   const conflictCount = repos.reduce((sum, r) => sum + r.conflicts.length, 0);
+  const stoppedCount = repos.filter((r) => r.status === 'stopped').length;
+  const watchedCount = repos.length - stoppedCount;
+  const stoppedSuffix = stoppedCount > 0 ? ` (${stoppedCount} stopped)` : '';
   const checked = lastCheckedAt ? `Last checked: ${formatElapsed(lastCheckedAt)}` : 'Checking…';
   const headline = conflictCount > 0 ? `⚠ ${conflictCount} conflict${conflictCount === 1 ? '' : 's'}` : '✓ No conflicts';
-  return `${headline} · ${repos.length} repositories watched · ${checked}`;
+  return `${headline} · ${watchedCount} repositories watched${stoppedSuffix} · ${checked}`;
 }
 
 export interface ConflictPanelCallbacks {

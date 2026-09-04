@@ -28,7 +28,7 @@ export class ConflictWatcher {
   constructor(memento: vscode.Memento) {
     this.state = new WatcherState(memento);
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.updateStatusBar('idle');
+    this.renderIdleStatus();
     this.statusBar.show();
   }
 
@@ -38,7 +38,7 @@ export class ConflictWatcher {
     }
     this.running = true;
     Logger.info('Git Conflict Watcher started.');
-    this.updateStatusBar('watching');
+    this.renderWatchingStatus();
 
     void this.runCycle();
     const intervalMs = Math.max(5, Configuration.intervalSeconds) * 1000;
@@ -56,7 +56,7 @@ export class ConflictWatcher {
     }
     this.repositoryStatuses = [];
     Logger.info('Git Conflict Watcher stopped.');
-    this.updateStatusBar('idle');
+    this.renderIdleStatus();
   }
 
   isRunning(): boolean {
@@ -80,8 +80,7 @@ export class ConflictWatcher {
     this.repositoryStatuses = this.repositoryStatuses.map((s) =>
       s.path === rootPath ? this.stoppedStatus({ rootPath, name }, 'Stopped for this session.') : s
     );
-    const conflictCount = this.repositoryStatuses.reduce((sum, s) => sum + s.conflicts.length, 0);
-    this.updateStatusBar('watching', this.repositoryStatuses.length, conflictCount);
+    this.renderWatchingStatus();
   }
 
   /** Resumes watching a single repository that was stopped for this session. */
@@ -106,7 +105,7 @@ export class ConflictWatcher {
       if (repositories.length === 0) {
         this.repositoryStatuses = [];
         this.lastCheckedAt = Date.now();
-        this.updateStatusBar('watching', 0, 0);
+        this.renderWatchingStatus();
         return;
       }
 
@@ -139,9 +138,7 @@ export class ConflictWatcher {
 
       this.repositoryStatuses = statuses;
       this.lastCheckedAt = Date.now();
-
-      const conflictCount = statuses.reduce((sum, s) => sum + s.conflicts.length, 0);
-      this.updateStatusBar('watching', statuses.length, conflictCount);
+      this.renderWatchingStatus();
 
       if (toNotify.length > 0) {
         Logger.warn(`Detected ${toNotify.length} potential conflict(s).`);
@@ -199,23 +196,28 @@ export class ConflictWatcher {
     };
   }
 
-  private updateStatusBar(state: 'idle' | 'watching', repoCount = 0, conflictCount = 0): void {
-    if (state === 'idle') {
-      this.statusBar.text = '$(circle-slash) Git Conflict Watcher';
-      this.statusBar.tooltip = 'Git Conflict Watcher is stopped. Click to start.';
-      this.statusBar.command = 'gitConflictWatcher.start';
-      return;
-    }
+  private renderIdleStatus(): void {
+    this.statusBar.text = '$(circle-slash) Git Conflict Watcher';
+    this.statusBar.tooltip = 'Git Conflict Watcher is stopped. Click to start.';
+    this.statusBar.command = 'gitConflictWatcher.start';
+  }
 
+  /** Renders the status bar from this.repositoryStatuses. "Watched" excludes stopped/excluded repos. */
+  private renderWatchingStatus(): void {
     this.statusBar.command = 'gitConflictWatcher.showStatus';
     const checkedLabel = this.lastCheckedAt ? `Last checked: ${formatElapsed(this.lastCheckedAt)}` : 'Checking…';
 
+    const stoppedCount = this.repositoryStatuses.filter((s) => s.status === 'stopped').length;
+    const watchedCount = this.repositoryStatuses.length - stoppedCount;
+    const conflictCount = this.repositoryStatuses.reduce((sum, s) => sum + s.conflicts.length, 0);
+    const stoppedSuffix = stoppedCount > 0 ? ` (${stoppedCount} stopped)` : '';
+
     if (conflictCount > 0) {
       this.statusBar.text = `$(warning) Conflicts: ${conflictCount}`;
-      this.statusBar.tooltip = `${conflictCount} potential conflict(s) · ${repoCount} repositories watched · ${checkedLabel}`;
+      this.statusBar.tooltip = `${conflictCount} potential conflict(s) · ${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}`;
     } else {
-      this.statusBar.text = `$(check) No conflicts · ${repoCount} repo${repoCount === 1 ? '' : 's'}`;
-      this.statusBar.tooltip = `${repoCount} repositories watched · ${checkedLabel}. Click for details.`;
+      this.statusBar.text = `$(check) No conflicts · ${watchedCount} repo${watchedCount === 1 ? '' : 's'}`;
+      this.statusBar.tooltip = `${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}. Click for details.`;
     }
   }
 
