@@ -75,6 +75,13 @@ export class ConflictWatcher {
   stopWatchingRepo(rootPath: string, name: string): void {
     this.stoppedRepositories.add(rootPath);
     Logger.info(`Stopped watching "${name}" for this session.`);
+
+    // Reflect it immediately rather than waiting for the next full cycle.
+    this.repositoryStatuses = this.repositoryStatuses.map((s) =>
+      s.path === rootPath ? this.stoppedStatus({ rootPath, name }, 'Stopped for this session.') : s
+    );
+    const conflictCount = this.repositoryStatuses.reduce((sum, s) => sum + s.conflicts.length, 0);
+    this.updateStatusBar('watching', this.repositoryStatuses.length, conflictCount);
   }
 
   /** Resumes watching a single repository that was stopped for this session. */
@@ -104,28 +111,31 @@ export class ConflictWatcher {
       }
 
       const remote = Configuration.remote;
-      const statuses: RepositoryStatus[] = [];
       const toNotify: Conflict[] = [];
 
-      for (const repository of repositories) {
-        const skipReason = this.skipReason(repository);
-        if (skipReason) {
-          statuses.push(this.stoppedStatus(repository, skipReason));
-          continue;
-        }
-
-        const watcher = new RepositoryWatcher(repository, this.state);
-        try {
-          const result = await watcher.check(remote);
-          statuses.push(result.status);
-          if (result.notify) {
-            toNotify.push(...result.status.conflicts);
+      // Each repo's fetch/diff is independent of the others, so run them concurrently
+      // instead of one-at-a-time -- a full cycle is then bounded by the slowest single
+      // repo rather than the sum of all of them.
+      const statuses = await Promise.all(
+        repositories.map(async (repository) => {
+          const skipReason = this.skipReason(repository);
+          if (skipReason) {
+            return this.stoppedStatus(repository, skipReason);
           }
-        } catch (error) {
-          ErrorHandler.handle(`[${repository.name}] check failed`, error);
-          statuses.push(this.errorStatus(repository, 'Check failed. See output log for details.'));
-        }
-      }
+
+          const watcher = new RepositoryWatcher(repository, this.state);
+          try {
+            const result = await watcher.check(remote);
+            if (result.notify) {
+              toNotify.push(...result.status.conflicts);
+            }
+            return result.status;
+          } catch (error) {
+            ErrorHandler.handle(`[${repository.name}] check failed`, error);
+            return this.errorStatus(repository, 'Check failed. See output log for details.');
+          }
+        })
+      );
 
       this.repositoryStatuses = statuses;
       this.lastCheckedAt = Date.now();
