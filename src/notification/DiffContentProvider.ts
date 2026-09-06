@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { GitManager } from '../git/GitManager';
 
-export const DIFF_SCHEME = 'git-conflict-watcher';
+export const DIFF_SCHEME = 'mergewatcher';
 
 interface DiffUriParams {
   repoPath: string;

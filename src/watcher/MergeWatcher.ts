@@ -12,7 +12,7 @@ import { RepositoryStatus } from '../models/RepositoryStatus';
 import { formatElapsed } from '../utils/formatElapsed';
 import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 
-export class ConflictWatcher {
+export class MergeWatcher {
   private timer: ReturnType<typeof setInterval> | undefined;
   private running = false;
   private readonly state: WatcherState;
@@ -41,7 +41,7 @@ export class ConflictWatcher {
       return;
     }
     this.running = true;
-    Logger.info('Git Conflict Watcher started.');
+    Logger.info('MergeWatcher started.');
     this.renderWatchingStatus();
 
     void this.runCycle();
@@ -59,7 +59,7 @@ export class ConflictWatcher {
       this.timer = undefined;
     }
     this.repositoryStatuses = [];
-    Logger.info('Git Conflict Watcher stopped.');
+    Logger.info('MergeWatcher stopped.');
     this.renderIdleStatus();
   }
 
@@ -164,7 +164,7 @@ export class ConflictWatcher {
     }
     const excluded = Configuration.excludedRepositories;
     if (excluded.some((entry) => entry === repository.name || entry === repository.rootPath)) {
-      return 'Excluded via gitConflictWatcher.excludedRepositories.';
+      return 'Excluded via mergeWatcher.excludedRepositories.';
     }
     return undefined;
   }
@@ -202,14 +202,14 @@ export class ConflictWatcher {
   }
 
   private renderIdleStatus(): void {
-    this.statusBar.text = '$(circle-slash) Git Conflict Watcher';
-    this.statusBar.tooltip = 'Git Conflict Watcher is stopped. Click to start.';
-    this.statusBar.command = 'gitConflictWatcher.start';
+    this.statusBar.text = '$(circle-slash) MergeWatcher';
+    this.statusBar.tooltip = 'MergeWatcher is stopped. Click to start.';
+    this.statusBar.command = 'mergeWatcher.start';
   }
 
   /** Renders the status bar from this.repositoryStatuses. "Watched" excludes stopped/excluded repos. */
   private renderWatchingStatus(): void {
-    this.statusBar.command = 'gitConflictWatcher.showStatus';
+    this.statusBar.command = 'mergeWatcher.showStatus';
     const checkedLabel = this.lastCheckedAt ? `Last checked: ${formatElapsed(this.lastCheckedAt)}` : 'Checking…';
 
     const stoppedCount = this.repositoryStatuses.filter((s) => s.status === 'stopped').length;

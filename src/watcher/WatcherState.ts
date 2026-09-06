@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const STATE_KEY = 'gitConflictWatcher.lastNotifiedCommit';
+const STATE_KEY = 'mergeWatcher.lastNotifiedCommit';
 
 /** Tracks the remote commit each repository was last notified about, to avoid repeat notifications for the same commit. */
 export class WatcherState {

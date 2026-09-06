@@ -1,14 +1,14 @@
 {
-  "name": "git-conflict-watcher",
-  "displayName": "Git Conflict Watcher",
+  "name": "mergewatcher",
+  "displayName": "MergeWatcher",
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "publisher": "local-dev",
   "icon": "icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/satheeesh3/Conflict-Watcher.git"
+    "url": "https://github.com/satheeesh3/MergeWatcher.git"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -24,51 +24,51 @@
   "contributes": {
     "commands": [
       {
-        "command": "gitConflictWatcher.start",
-        "title": "Git Conflict Watcher: Start Watching"
+        "command": "mergeWatcher.start",
+        "title": "MergeWatcher: Start Watching"
       },
       {
-        "command": "gitConflictWatcher.stop",
-        "title": "Git Conflict Watcher: Stop Watching"
+        "command": "mergeWatcher.stop",
+        "title": "MergeWatcher: Stop Watching"
       },
       {
-        "command": "gitConflictWatcher.checkNow",
-        "title": "Git Conflict Watcher: Check Now"
+        "command": "mergeWatcher.checkNow",
+        "title": "MergeWatcher: Check Now"
       },
       {
-        "command": "gitConflictWatcher.showStatus",
-        "title": "Git Conflict Watcher: Show Status"
+        "command": "mergeWatcher.showStatus",
+        "title": "MergeWatcher: Show Status"
       },
       {
-        "command": "gitConflictWatcher.resumeWatchingAll",
-        "title": "Git Conflict Watcher: Resume Watching All Repositories"
+        "command": "mergeWatcher.resumeWatchingAll",
+        "title": "MergeWatcher: Resume Watching All Repositories"
       }
     ],
     "configuration": {
-      "title": "Git Conflict Watcher",
+      "title": "MergeWatcher",
       "properties": {
-        "gitConflictWatcher.enabled": {
+        "mergeWatcher.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable or disable the Git Conflict Watcher."
+          "description": "Enable or disable MergeWatcher."
         },
-        "gitConflictWatcher.intervalSeconds": {
+        "mergeWatcher.intervalSeconds": {
           "type": "number",
           "default": 30,
           "minimum": 5,
           "description": "How often (in seconds) to fetch the remote and check for conflicts."
         },
-        "gitConflictWatcher.remote": {
+        "mergeWatcher.remote": {
           "type": "string",
           "default": "origin",
           "description": "The Git remote to compare against."
         },
-        "gitConflictWatcher.notifyOnConflict": {
+        "mergeWatcher.notifyOnConflict": {
           "type": "boolean",
           "default": true,
           "description": "Show a warning notification when a potential conflict is detected."
         },
-        "gitConflictWatcher.excludedRepositories": {
+        "mergeWatcher.excludedRepositories": {
           "type": "array",
           "items": {
             "type": "string"
@@ -76,7 +76,7 @@
           "default": [],
           "description": "Repository names or paths to permanently exclude from watching."
         },
-        "gitConflictWatcher.maxConcurrentChecks": {
+        "mergeWatcher.maxConcurrentChecks": {
           "type": "number",
           "default": 4,
           "minimum": 1,

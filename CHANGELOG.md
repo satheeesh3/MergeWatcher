@@ -1,6 +1,11 @@
 # Changelog
 
-All notable changes to the Git Conflict Watcher extension are documented here.
+All notable changes to the MergeWatcher extension (formerly "Git Conflict Watcher") are documented here.
+
+## [0.1.8]
+
+### Changed
+- Renamed the extension from "Git Conflict Watcher" to "MergeWatcher". This changes the settings namespace (`gitConflictWatcher.*` → `mergeWatcher.*`) and all command IDs — if you had settings saved under the old keys, re-set them under the new names.
 
 ## [0.1.7]
 

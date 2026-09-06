@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export class Configuration {
   private static section(): vscode.WorkspaceConfiguration {
-    return vscode.workspace.getConfiguration('gitConflictWatcher');
+    return vscode.workspace.getConfiguration('mergeWatcher');
   }
 
   static get enabled(): boolean {

@@ -1,4 +1,4 @@
-# Git Conflict Watcher
+# MergeWatcher
 
 Proactively detects potential Git conflicts before you pull or merge remote changes.
 
@@ -23,22 +23,22 @@ merge base. If both sides touched overlapping lines in the same file, you get a 
 
 ## Commands
 
-- `Git Conflict Watcher: Start Watching`
-- `Git Conflict Watcher: Stop Watching`
-- `Git Conflict Watcher: Check Now`
-- `Git Conflict Watcher: Show Status`
-- `Git Conflict Watcher: Resume Watching All Repositories`
+- `MergeWatcher: Start Watching`
+- `MergeWatcher: Stop Watching`
+- `MergeWatcher: Check Now`
+- `MergeWatcher: Show Status`
+- `MergeWatcher: Resume Watching All Repositories`
 
 ## Settings
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `gitConflictWatcher.enabled` | `true` | Enable or disable the watcher. |
-| `gitConflictWatcher.intervalSeconds` | `30` | How often to fetch and check for conflicts. |
-| `gitConflictWatcher.remote` | `"origin"` | The Git remote to compare against. |
-| `gitConflictWatcher.notifyOnConflict` | `true` | Show a warning notification when a conflict is detected. |
-| `gitConflictWatcher.excludedRepositories` | `[]` | Repository names or paths to permanently exclude from watching. |
-| `gitConflictWatcher.maxConcurrentChecks` | `4` | How many repositories to check at once. Lower this on low-resource machines. |
+| `mergeWatcher.enabled` | `true` | Enable or disable the watcher. |
+| `mergeWatcher.intervalSeconds` | `30` | How often to fetch and check for conflicts. |
+| `mergeWatcher.remote` | `"origin"` | The Git remote to compare against. |
+| `mergeWatcher.notifyOnConflict` | `true` | Show a warning notification when a conflict is detected. |
+| `mergeWatcher.excludedRepositories` | `[]` | Repository names or paths to permanently exclude from watching. |
+| `mergeWatcher.maxConcurrentChecks` | `4` | How many repositories to check at once. Lower this on low-resource machines. |
 
 ## Development
 
@@ -60,5 +60,5 @@ Package a `.vsix` for local install/sharing with:
 
 ```
 npx vsce package
-code --install-extension git-conflict-watcher-<version>.vsix
+code --install-extension mergewatcher-<version>.vsix
 ```

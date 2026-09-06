@@ -114,7 +114,7 @@ export class ConflictPanel {
 
   show(): void {
     const quickPick = vscode.window.createQuickPick<RepoItem>();
-    quickPick.title = 'Git Conflict Watcher  ·  Esc to close';
+    quickPick.title = 'MergeWatcher  ·  Esc to close';
     quickPick.buttons = [REFRESH_BUTTON];
     quickPick.ignoreFocusOut = true;
 

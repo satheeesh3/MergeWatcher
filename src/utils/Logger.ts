@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export class Logger {
-  private static channel: vscode.OutputChannel = vscode.window.createOutputChannel('Git Conflict Watcher');
+  private static channel: vscode.OutputChannel = vscode.window.createOutputChannel('MergeWatcher');
 
   static info(message: string): void {
     this.write('INFO', message);
