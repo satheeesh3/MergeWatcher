@@ -4,6 +4,7 @@
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
   "version": "0.1.7",
   "publisher": "local-dev",
+  "icon": "icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
