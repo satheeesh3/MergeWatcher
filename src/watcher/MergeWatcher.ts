@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { RepositoryScanner } from '../git/RepositoryScanner';
 import { RepositoryWatcher } from './RepositoryWatcher';
 import { WatcherState } from './WatcherState';
@@ -26,8 +27,8 @@ export class MergeWatcher {
   private repositoryStatuses: RepositoryStatus[] = [];
   private lastCheckedAt: number | undefined;
 
-  /** Guards against a scheduled cycle piling up on a still-running one (e.g. a slow network). */
-  private cycleInProgress = false;
+  /** The currently in-flight cycle, if any -- late callers await this instead of returning early against stale data. */
+  private cyclePromise: Promise<void> | undefined;
   /** Set when runCycle() is called while one is already in progress, so that call isn't silently dropped. */
   private rerunRequested = false;
 
@@ -43,7 +44,7 @@ export class MergeWatcher {
       return;
     }
     this.running = true;
-    Logger.info('MergeWatcher started.');
+    Logger.info('Merge Watcher started.');
     this.renderWatchingStatus();
 
     void this.runCycle();
@@ -61,7 +62,7 @@ export class MergeWatcher {
       this.timer = undefined;
     }
     this.repositoryStatuses = [];
-    Logger.info('MergeWatcher stopped.');
+    Logger.info('Merge Watcher stopped.');
     this.renderIdleStatus();
   }
 
@@ -89,9 +90,14 @@ export class MergeWatcher {
     this.renderWatchingStatus();
   }
 
-  /** Resumes watching a single repository that was stopped for this session. */
-  resumeWatchingRepo(rootPath: string): void {
+  /**
+   * Resumes watching a single repository that was stopped for this session, and checks just
+   * that repository -- not the whole workspace -- so resuming one repo among many doesn't
+   * wait on a fetch for every other one too.
+   */
+  async resumeWatchingRepo(rootPath: string): Promise<void> {
     this.stoppedRepositories.delete(rootPath);
+    await this.refreshSingleRepository(rootPath);
   }
 
   /** Resumes watching every repository stopped for this session (permanent exclusions in settings are unaffected). */
@@ -101,28 +107,33 @@ export class MergeWatcher {
   }
 
   /**
-   * Runs a check cycle. If one is already running, this call is queued to run once more
-   * right after (rather than silently dropped) so a manual Refresh/Resume triggered while a
-   * background cycle happens to be in flight still produces a fresh result.
+   * Runs a check cycle. If one is already running, this call queues one more run right after
+   * it and waits for THAT to finish too -- so a manual Refresh/Resume triggered while a
+   * background cycle happens to be in flight still resolves only once fresh results are ready,
+   * instead of resolving immediately against stale data.
    */
   async runCycle(): Promise<void> {
     if (!Configuration.enabled) {
       return;
     }
-    if (this.cycleInProgress) {
+    if (this.cyclePromise) {
       this.rerunRequested = true;
-      return;
+      return this.cyclePromise;
     }
 
-    this.cycleInProgress = true;
+    this.cyclePromise = this.runUntilSettled();
     try {
-      do {
-        this.rerunRequested = false;
-        await this.runOneCycle();
-      } while (this.rerunRequested);
+      await this.cyclePromise;
     } finally {
-      this.cycleInProgress = false;
+      this.cyclePromise = undefined;
     }
+  }
+
+  private async runUntilSettled(): Promise<void> {
+    do {
+      this.rerunRequested = false;
+      await this.runOneCycle();
+    } while (this.rerunRequested);
   }
 
   private async runOneCycle(): Promise<void> {
@@ -178,6 +189,47 @@ export class MergeWatcher {
     }
   }
 
+  /** Checks a single repository and merges its fresh status into repositoryStatuses in place. */
+  private async refreshSingleRepository(rootPath: string): Promise<void> {
+    const existing = this.repositoryStatuses.find((s) => s.path === rootPath);
+    const repository: Repository = { rootPath, name: existing?.name ?? path.basename(rootPath) };
+
+    const skipReason = this.skipReason(repository);
+    let status: RepositoryStatus;
+    let conflicts: Conflict[] = [];
+    let notify = false;
+
+    if (skipReason) {
+      status = this.stoppedStatus(repository, skipReason);
+    } else {
+      const watcher = new RepositoryWatcher(repository, this.state);
+      try {
+        const result = await watcher.check(Configuration.remote);
+        status = result.status;
+        conflicts = result.status.conflicts;
+        notify = result.notify;
+      } catch (error) {
+        ErrorHandler.handle(`[${repository.name}] check failed`, error);
+        status = this.errorStatus(repository, 'Check failed. See output log for details.');
+      }
+    }
+
+    const index = this.repositoryStatuses.findIndex((s) => s.path === rootPath);
+    if (index >= 0) {
+      this.repositoryStatuses = this.repositoryStatuses.map((s, i) => (i === index ? status : s));
+    } else {
+      this.repositoryStatuses = [...this.repositoryStatuses, status];
+    }
+    this.lastCheckedAt = Date.now();
+    this.renderWatchingStatus();
+
+    if (notify && conflicts.length > 0 && Configuration.notifyOnConflict) {
+      for (const conflict of conflicts) {
+        void this.notifications.notify(conflict);
+      }
+    }
+  }
+
   private skipReason(repository: Repository): string | undefined {
     if (this.stoppedRepositories.has(repository.rootPath)) {
       return 'Stopped for this session.';
@@ -222,8 +274,8 @@ export class MergeWatcher {
   }
 
   private renderIdleStatus(): void {
-    this.statusBar.text = '$(circle-slash) MergeWatcher';
-    this.statusBar.tooltip = 'MergeWatcher is stopped. Click to start.';
+    this.statusBar.text = '$(circle-slash) Merge Watcher';
+    this.statusBar.tooltip = 'Merge Watcher is stopped. Click to start.';
     this.statusBar.command = 'mergeWatcher.start';
   }
 

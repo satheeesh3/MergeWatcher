@@ -32,7 +32,9 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       const panel = new ConflictPanel(new NotificationManager(), {
         onStopWatchingRepo: (rootPath, name) => watcher?.stopWatchingRepo(rootPath, name),
-        onResumeWatchingRepo: (rootPath) => watcher?.resumeWatchingRepo(rootPath),
+        onResumeWatchingRepo: async (rootPath) => {
+          await watcher?.resumeWatchingRepo(rootPath);
+        },
         onRefresh: async () => {
           await watcher?.runCycle();
         },
@@ -67,7 +69,7 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => watcher?.dispose() }
   );
 
-  Logger.info('MergeWatcher activated.');
+  Logger.info('Merge Watcher activated.');
 
   if (Configuration.enabled) {
     watcher.start();

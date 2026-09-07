@@ -1,6 +1,6 @@
-# MergeWatcher
+# Merge Watcher
 
-Proactively detects potential Git conflicts before you pull or merge remote changes.
+Automatically detects Git conflicts before pull/merge. No surprises.
 
 The extension watches every Git repository in your workspace, follows the currently checked-out branch, periodically
 fetches the corresponding remote branch, and compares local vs. remote changed line ranges since their common
@@ -23,11 +23,11 @@ merge base. If both sides touched overlapping lines in the same file, you get a 
 
 ## Commands
 
-- `MergeWatcher: Start Watching`
-- `MergeWatcher: Stop Watching`
-- `MergeWatcher: Check Now`
-- `MergeWatcher: Show Status`
-- `MergeWatcher: Resume Watching All Repositories`
+- `Merge Watcher: Start Watching`
+- `Merge Watcher: Stop Watching`
+- `Merge Watcher: Check Now`
+- `Merge Watcher: Show Status`
+- `Merge Watcher: Resume Watching All Repositories`
 
 ## Settings
 

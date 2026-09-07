@@ -99,7 +99,7 @@ function summarize(repos: RepositoryStatus[], lastCheckedAt: number | undefined)
 
 export interface ConflictPanelCallbacks {
   onStopWatchingRepo: (rootPath: string, name: string) => void;
-  onResumeWatchingRepo: (rootPath: string) => void;
+  onResumeWatchingRepo: (rootPath: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   getStatuses: () => RepositoryStatus[];
   getLastCheckedAt: () => number | undefined;
@@ -114,7 +114,7 @@ export class ConflictPanel {
 
   show(): void {
     const quickPick = vscode.window.createQuickPick<RepoItem>();
-    quickPick.title = 'MergeWatcher  ·  Esc to close';
+    quickPick.title = 'Merge Watcher  ·  Esc to close';
     quickPick.buttons = [REFRESH_BUTTON];
     quickPick.ignoreFocusOut = true;
 
@@ -183,10 +183,7 @@ export class ConflictPanel {
       }
 
       if (event.button === RESUME_WATCHING_BUTTON) {
-        void runBusy(`Resuming "${repo.name}"… checking now`, async () => {
-          this.callbacks.onResumeWatchingRepo(repo.path);
-          await this.callbacks.onRefresh();
-        });
+        void runBusy(`Resuming "${repo.name}"…`, () => this.callbacks.onResumeWatchingRepo(repo.path));
       }
     });
 

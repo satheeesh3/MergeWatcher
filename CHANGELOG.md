@@ -1,11 +1,21 @@
 # Changelog
 
-All notable changes to the MergeWatcher extension (formerly "Git Conflict Watcher") are documented here.
+All notable changes to the Merge Watcher extension (formerly "Git Conflict Watcher") are documented here.
+
+## [0.1.12]
+
+### Changed
+- Display name is "Merge Watcher" (two words), not "MergeWatcher" — matches Marketplace naming conventions. Internal identifiers (package name `mergewatcher`, settings/commands `mergeWatcher.*`) are unaffected.
+
+### Fixed
+- Resume Watching triggered a full workspace refresh (re-fetching every repository) just to update the one repo being resumed, which made it noticeably slow on larger workspaces. It now checks only that single repository.
+- The panel's busy spinner didn't actually block further clicks, so clicking Resume Watching (or anything else) again while an action was still in flight fired a second overlapping action, racing the UI state. Panel actions are now locked out until the current one finishes.
+- `runCycle()` could resolve immediately against stale data if a manual Refresh/Resume happened to overlap a background cycle, instead of waiting for the queued rerun to actually finish.
 
 ## [0.1.8]
 
 ### Changed
-- Renamed the extension from "Git Conflict Watcher" to "MergeWatcher". This changes the settings namespace (`gitConflictWatcher.*` → `mergeWatcher.*`) and all command IDs — if you had settings saved under the old keys, re-set them under the new names.
+- Renamed the extension from "Git Conflict Watcher" to "Merge Watcher". This changes the settings namespace (`gitConflictWatcher.*` → `mergeWatcher.*`) and all command IDs — if you had settings saved under the old keys, re-set them under the new names.
 
 ## [0.1.7]
 

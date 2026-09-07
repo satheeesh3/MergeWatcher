@@ -1,8 +1,8 @@
 {
   "name": "mergewatcher",
-  "displayName": "MergeWatcher",
-  "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
-  "version": "0.1.9",
+  "displayName": "Merge Watcher",
+  "description": "Automatically detects Git conflicts before pull/merge. No surprises.",
+  "version": "0.1.13",
   "publisher": "satheeesh3",
   "icon": "icon.png",
   "license": "MIT",
@@ -25,32 +25,32 @@
     "commands": [
       {
         "command": "mergeWatcher.start",
-        "title": "MergeWatcher: Start Watching"
+        "title": "Merge Watcher: Start Watching"
       },
       {
         "command": "mergeWatcher.stop",
-        "title": "MergeWatcher: Stop Watching"
+        "title": "Merge Watcher: Stop Watching"
       },
       {
         "command": "mergeWatcher.checkNow",
-        "title": "MergeWatcher: Check Now"
+        "title": "Merge Watcher: Check Now"
       },
       {
         "command": "mergeWatcher.showStatus",
-        "title": "MergeWatcher: Show Status"
+        "title": "Merge Watcher: Show Status"
       },
       {
         "command": "mergeWatcher.resumeWatchingAll",
-        "title": "MergeWatcher: Resume Watching All Repositories"
+        "title": "Merge Watcher: Resume Watching All Repositories"
       }
     ],
     "configuration": {
-      "title": "MergeWatcher",
+      "title": "Merge Watcher",
       "properties": {
         "mergeWatcher.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable or disable MergeWatcher."
+          "description": "Enable or disable Merge Watcher."
         },
         "mergeWatcher.intervalSeconds": {
           "type": "number",
