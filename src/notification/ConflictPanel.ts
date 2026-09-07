@@ -138,22 +138,38 @@ export class ConflictPanel {
       }
     });
 
+    let isBusy = false;
+
     const runBusy = async (message: string, action: () => Promise<void> | void) => {
+      if (isBusy) {
+        return;
+      }
+      isBusy = true;
       quickPick.busy = true;
       quickPick.placeholder = message;
       const MIN_VISIBLE_MS = 300;
-      await Promise.all([action(), sleep(MIN_VISIBLE_MS)]);
-      render();
-      quickPick.busy = false;
+      try {
+        await Promise.all([action(), sleep(MIN_VISIBLE_MS)]);
+      } finally {
+        render();
+        quickPick.busy = false;
+        isBusy = false;
+      }
     };
 
     quickPick.onDidTriggerButton((button) => {
+      if (isBusy) {
+        return;
+      }
       if (button === REFRESH_BUTTON) {
         void runBusy('Checking now…', () => this.callbacks.onRefresh());
       }
     });
 
     quickPick.onDidTriggerItemButton((event) => {
+      if (isBusy) {
+        return;
+      }
       const { repo, primaryConflict } = event.item;
 
       if (event.button === OPEN_FILE_BUTTON && primaryConflict) {
@@ -167,8 +183,10 @@ export class ConflictPanel {
       }
 
       if (event.button === RESUME_WATCHING_BUTTON) {
-        this.callbacks.onResumeWatchingRepo(repo.path);
-        void runBusy(`Resuming "${repo.name}"… checking now`, () => this.callbacks.onRefresh());
+        void runBusy(`Resuming "${repo.name}"… checking now`, async () => {
+          this.callbacks.onResumeWatchingRepo(repo.path);
+          await this.callbacks.onRefresh();
+        });
       }
     });
 

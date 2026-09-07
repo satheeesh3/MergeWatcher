@@ -28,6 +28,8 @@ export class MergeWatcher {
 
   /** Guards against a scheduled cycle piling up on a still-running one (e.g. a slow network). */
   private cycleInProgress = false;
+  /** Set when runCycle() is called while one is already in progress, so that call isn't silently dropped. */
+  private rerunRequested = false;
 
   constructor(memento: vscode.Memento) {
     this.state = new WatcherState(memento);
@@ -98,12 +100,32 @@ export class MergeWatcher {
     Logger.info('Resumed watching all repositories.');
   }
 
+  /**
+   * Runs a check cycle. If one is already running, this call is queued to run once more
+   * right after (rather than silently dropped) so a manual Refresh/Resume triggered while a
+   * background cycle happens to be in flight still produces a fresh result.
+   */
   async runCycle(): Promise<void> {
-    if (!Configuration.enabled || this.cycleInProgress) {
+    if (!Configuration.enabled) {
       return;
     }
-    this.cycleInProgress = true;
+    if (this.cycleInProgress) {
+      this.rerunRequested = true;
+      return;
+    }
 
+    this.cycleInProgress = true;
+    try {
+      do {
+        this.rerunRequested = false;
+        await this.runOneCycle();
+      } while (this.rerunRequested);
+    } finally {
+      this.cycleInProgress = false;
+    }
+  }
+
+  private async runOneCycle(): Promise<void> {
     try {
       const repositories = RepositoryScanner.findRepositories();
 
@@ -153,8 +175,6 @@ export class MergeWatcher {
       }
     } catch (error) {
       ErrorHandler.handle('Watcher cycle failed', error);
-    } finally {
-      this.cycleInProgress = false;
     }
   }
 

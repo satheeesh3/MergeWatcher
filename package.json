@@ -2,7 +2,7 @@
   "name": "mergewatcher",
   "displayName": "MergeWatcher",
   "description": "Proactively detects potential Git conflicts before you pull or merge remote changes.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "publisher": "satheeesh3",
   "icon": "icon.png",
   "license": "MIT",
