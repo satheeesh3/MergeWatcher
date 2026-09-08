@@ -1,5 +1,7 @@
 # Merge Watcher
 
+![Merge Watcher](media/hero.png)
+
 Automatically detects Git conflicts before pull/merge. No surprises.
 
 The extension watches every Git repository in your workspace, follows the currently checked-out branch, periodically
