@@ -9,4 +9,6 @@ export interface Conflict {
   remoteStart: number;
   remoteEnd: number;
   remoteCommit: string;
+  /** Author name of remoteCommit, when available. */
+  remoteAuthor?: string;
 }

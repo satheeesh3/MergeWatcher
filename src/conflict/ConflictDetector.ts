@@ -12,7 +12,8 @@ export class ConflictDetector {
     repository: Repository,
     branch: string,
     remoteCommit: string,
-    diff: DiffResult
+    diff: DiffResult,
+    remoteAuthor?: string
   ): Conflict[] {
     const conflicts: Conflict[] = [];
 
@@ -36,7 +37,8 @@ export class ConflictDetector {
               localEnd: local.endLine,
               remoteStart: remote.startLine,
               remoteEnd: remote.endLine,
-              remoteCommit
+              remoteCommit,
+              remoteAuthor
             });
           }
         }

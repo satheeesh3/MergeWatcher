@@ -54,6 +54,16 @@ export class GitManager {
     return this.run(['merge-base', refA, refB]);
   }
 
+  /** Author name of the given commit, e.g. for showing who made a conflicting change. */
+  async getCommitAuthor(commit: string): Promise<string | undefined> {
+    try {
+      const author = await this.run(['log', '-1', '--format=%an', commit]);
+      return author || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   /** Unified diff (0 lines of context) between two refs, or a ref and the working tree if toRef is omitted. */
   async diff(fromRef: string, toRef?: string): Promise<string> {
     const args = ['diff', '--unified=0', '--no-color', fromRef, ...(toRef ? [toRef] : [])];

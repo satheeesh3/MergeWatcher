@@ -53,7 +53,8 @@ function toItem(repo: RepositoryStatus): RepoItem {
   let detail: string | undefined;
   if (repo.status === 'conflict') {
     const first = repo.conflicts[0];
-    detail = `${first.file}   Local: ${first.localStart}-${first.localEnd}   Remote: ${first.remoteStart}-${first.remoteEnd}`;
+    const byAuthor = first.remoteAuthor ? `  ·  by ${first.remoteAuthor}` : '';
+    detail = `${first.file}   Local: ${first.localStart}-${first.localEnd}   Remote: ${first.remoteStart}-${first.remoteEnd}${byAuthor}`;
     if (repo.conflicts.length > 1) {
       detail += `  (+${repo.conflicts.length - 1} more)`;
     }

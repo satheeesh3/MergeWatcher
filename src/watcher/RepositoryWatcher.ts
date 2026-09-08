@@ -44,7 +44,13 @@ export class RepositoryWatcher {
     const mergeBase = await this.git.mergeBase('HEAD', remoteCommit);
     const analyzer = new DiffAnalyzer(this.git);
     const diff = await analyzer.analyze(mergeBase, remoteCommit);
-    const conflicts = ConflictDetector.detect(this.repository, branch, remoteCommit, diff);
+    let conflicts = ConflictDetector.detect(this.repository, branch, remoteCommit, diff);
+
+    if (conflicts.length > 0) {
+      // Only worth the extra git call when there's actually a conflict to attribute.
+      const remoteAuthor = await this.git.getCommitAuthor(remoteCommit);
+      conflicts = conflicts.map((c) => ({ ...c, remoteAuthor }));
+    }
 
     const [ahead, behind] = await Promise.all([
       this.git.revListCount(`${remoteCommit}..${localCommit}`),

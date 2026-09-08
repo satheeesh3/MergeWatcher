@@ -6,11 +6,12 @@ import { ErrorHandler } from '../utils/ErrorHandler';
 
 export class NotificationManager {
   async notify(conflict: Conflict): Promise<void> {
+    const who = conflict.remoteAuthor ?? 'Another developer';
     const message =
       `Potential Git Conflict in "${conflict.repository.name}" (${conflict.branch})\n` +
       `${conflict.file}\n` +
       `Local: ${conflict.localStart}-${conflict.localEnd}  Remote: ${conflict.remoteStart}-${conflict.remoteEnd}\n` +
-      `Another developer changed an area you are currently working on.`;
+      `${who} changed an area you are currently working on.`;
 
     const selection = await vscode.window.showWarningMessage(message, 'View Diff', 'Open File', 'Dismiss');
 
