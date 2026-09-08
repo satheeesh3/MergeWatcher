@@ -2,6 +2,26 @@
 
 All notable changes to the Merge Watcher extension (formerly "Git Conflict Watcher") are documented here.
 
+## [0.1.16]
+
+### Changed
+- Rewrote README to be shorter and more marketing-focused, with a hero image at the top.
+
+## [0.1.15]
+
+### Added
+- Hero image on the README (Marketplace listing / Extensions "Details" tab).
+
+## [0.1.14]
+
+### Added
+- Conflict notifications and the panel now show the actual commit author (`git log --format=%an`) instead of the generic "Another developer", fetched only when a conflict is found.
+
+## [0.1.13]
+
+### Changed
+- Tagline: "Automatically detects Git conflicts before pull/merge. No surprises."
+
 ## [0.1.12]
 
 ### Changed
