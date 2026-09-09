@@ -32,6 +32,10 @@ export class MergeWatcher {
   /** Set when runCycle() is called while one is already in progress, so that call isn't silently dropped. */
   private rerunRequested = false;
 
+  private readonly _onDidUpdate = new vscode.EventEmitter<void>();
+  /** Fires whenever repositoryStatuses (or running state) changes, for views like the Activity Bar tree to refresh. */
+  readonly onDidUpdate = this._onDidUpdate.event;
+
   constructor(memento: vscode.Memento) {
     this.state = new WatcherState(memento);
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -277,6 +281,7 @@ export class MergeWatcher {
     this.statusBar.text = '$(circle-slash) Merge Watcher';
     this.statusBar.tooltip = 'Merge Watcher is stopped. Click to start.';
     this.statusBar.command = 'mergeWatcher.start';
+    this._onDidUpdate.fire();
   }
 
   /** Renders the status bar from this.repositoryStatuses. "Watched" excludes stopped/excluded repos. */
@@ -296,10 +301,12 @@ export class MergeWatcher {
       this.statusBar.text = `$(check) No conflicts · ${watchedCount} repo${watchedCount === 1 ? '' : 's'}`;
       this.statusBar.tooltip = `${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}. Click for details.`;
     }
+    this._onDidUpdate.fire();
   }
 
   dispose(): void {
     this.stop();
     this.statusBar.dispose();
+    this._onDidUpdate.dispose();
   }
 }

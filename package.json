@@ -2,7 +2,7 @@
   "name": "mergewatcher",
   "displayName": "Merge Watcher",
   "description": "Automatically detects Git conflicts before pull/merge. No surprises.",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "publisher": "satheeesh3",
   "icon": "icon.png",
   "license": "MIT",
@@ -33,7 +33,8 @@
       },
       {
         "command": "mergeWatcher.checkNow",
-        "title": "Merge Watcher: Check Now"
+        "title": "Merge Watcher: Check Now",
+        "icon": "$(refresh)"
       },
       {
         "command": "mergeWatcher.showStatus",
@@ -42,8 +43,94 @@
       {
         "command": "mergeWatcher.resumeWatchingAll",
         "title": "Merge Watcher: Resume Watching All Repositories"
+      },
+      {
+        "command": "mergeWatcher.treeViewDiff",
+        "title": "View Diff",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "mergeWatcher.treeOpenFile",
+        "title": "Open File",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "mergeWatcher.treeStopWatching",
+        "title": "Stop Watching",
+        "icon": "$(circle-slash)"
+      },
+      {
+        "command": "mergeWatcher.treeResumeWatching",
+        "title": "Resume Watching",
+        "icon": "$(debug-start)"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mergeWatcher",
+          "title": "Merge Watcher",
+          "icon": "media/activitybar-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "mergeWatcher": [
+        {
+          "id": "mergeWatcher.repositoriesView",
+          "name": "Repositories"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "mergeWatcher.checkNow",
+          "when": "view == mergeWatcher.repositoriesView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mergeWatcher.treeViewDiff",
+          "when": "view == mergeWatcher.repositoriesView && viewItem == repo-conflict",
+          "group": "inline@1"
+        },
+        {
+          "command": "mergeWatcher.treeOpenFile",
+          "when": "view == mergeWatcher.repositoriesView && viewItem == repo-conflict",
+          "group": "inline@2"
+        },
+        {
+          "command": "mergeWatcher.treeStopWatching",
+          "when": "view == mergeWatcher.repositoriesView && viewItem =~ /^repo-(synced|behind|conflict|error)$/",
+          "group": "inline@3"
+        },
+        {
+          "command": "mergeWatcher.treeResumeWatching",
+          "when": "view == mergeWatcher.repositoriesView && viewItem == repo-stopped",
+          "group": "inline@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "mergeWatcher.treeViewDiff",
+          "when": "false"
+        },
+        {
+          "command": "mergeWatcher.treeOpenFile",
+          "when": "false"
+        },
+        {
+          "command": "mergeWatcher.treeStopWatching",
+          "when": "false"
+        },
+        {
+          "command": "mergeWatcher.treeResumeWatching",
+          "when": "false"
+        }
+      ]
+    },
     "configuration": {
       "title": "Merge Watcher",
       "properties": {
