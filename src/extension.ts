@@ -4,6 +4,7 @@ import { DiffContentProvider, DIFF_SCHEME } from './notification/DiffContentProv
 import { NotificationManager } from './notification/NotificationManager';
 import { ConflictPanel } from './notification/ConflictPanel';
 import { RepositoriesTreeProvider, RepositoryTreeItem } from './views/RepositoriesTreeProvider';
+import { watchGitExtension } from './git/GitExtensionWatcher';
 import { Configuration } from './config/Configuration';
 import { Logger } from './utils/Logger';
 
@@ -20,6 +21,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.window.registerTreeDataProvider('mergeWatcher.repositoriesView', treeProvider),
     watcher.onDidUpdate(() => treeProvider.refresh()),
+
+    // Refresh promptly on pull/commit/checkout/merge instead of waiting for the poll interval.
+    watchGitExtension(() => {
+      if (watcher?.isRunning()) {
+        void watcher.runCycle();
+      }
+    }),
 
     vscode.commands.registerCommand('mergeWatcher.start', () => {
       watcher?.start();
