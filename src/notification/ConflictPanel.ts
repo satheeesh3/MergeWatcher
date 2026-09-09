@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Conflict } from '../models/Conflict';
-import { RepoStatus, RepositoryStatus } from '../models/RepositoryStatus';
+import { RepositoryStatus } from '../models/RepositoryStatus';
+import { STATUS_ICON, STATUS_LABEL } from '../models/statusPresentation';
 import { NotificationManager } from './NotificationManager';
 import { formatElapsed } from '../utils/formatElapsed';
 
@@ -29,22 +30,6 @@ interface RepoItem extends vscode.QuickPickItem {
   /** Only set when this item's primary conflict should open on Enter. */
   primaryConflict?: Conflict;
 }
-
-const STATUS_ICON: Record<RepoStatus, string> = {
-  synced: '$(pass-filled)',
-  behind: '$(arrow-down)',
-  conflict: '$(warning)',
-  error: '$(error)',
-  stopped: '$(circle-slash)'
-};
-
-const STATUS_LABEL: Record<RepoStatus, string> = {
-  synced: 'Synced',
-  behind: 'Behind',
-  conflict: 'Conflict',
-  error: 'Error',
-  stopped: 'Stopped Watching'
-};
 
 function toItem(repo: RepositoryStatus): RepoItem {
   const branch = repo.branch ?? '—';
@@ -77,7 +62,8 @@ function toItem(repo: RepositoryStatus): RepoItem {
   return {
     repo,
     primaryConflict: repo.conflicts[0],
-    label: `${STATUS_ICON[repo.status]} ${repo.name}`,
+    label: repo.name,
+    iconPath: STATUS_ICON[repo.status],
     description: `${branch} · ${STATUS_LABEL[repo.status]}${countSuffix}`,
     detail,
     buttons

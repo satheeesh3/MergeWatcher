@@ -1,21 +1,6 @@
 import * as vscode from 'vscode';
-import { RepoStatus, RepositoryStatus } from '../models/RepositoryStatus';
-
-const STATUS_ICON: Record<RepoStatus, vscode.ThemeIcon> = {
-  synced: new vscode.ThemeIcon('pass-filled', new vscode.ThemeColor('charts.green')),
-  behind: new vscode.ThemeIcon('arrow-down', new vscode.ThemeColor('charts.blue')),
-  conflict: new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.red')),
-  error: new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red')),
-  stopped: new vscode.ThemeIcon('circle-slash', new vscode.ThemeColor('disabledForeground'))
-};
-
-const STATUS_LABEL: Record<RepoStatus, string> = {
-  synced: 'Synced',
-  behind: 'Behind',
-  conflict: 'Conflict',
-  error: 'Error',
-  stopped: 'Stopped Watching'
-};
+import { RepositoryStatus } from '../models/RepositoryStatus';
+import { STATUS_ICON, STATUS_LABEL } from '../models/statusPresentation';
 
 export class RepositoryTreeItem extends vscode.TreeItem {
   constructor(public readonly repo: RepositoryStatus) {
