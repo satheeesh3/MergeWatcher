@@ -298,7 +298,7 @@ export class MergeWatcher {
       this.statusBar.text = `$(warning) Conflicts: ${conflictCount}`;
       this.statusBar.tooltip = `${conflictCount} potential conflict(s) · ${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}`;
     } else {
-      this.statusBar.text = `$(check) No conflicts · ${watchedCount} repo${watchedCount === 1 ? '' : 's'}`;
+      this.statusBar.text = `$(pass-filled) No conflicts · ${watchedCount} repo${watchedCount === 1 ? '' : 's'}`;
       this.statusBar.tooltip = `${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}. Click for details.`;
     }
     this._onDidUpdate.fire();

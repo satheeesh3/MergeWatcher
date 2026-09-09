@@ -2,9 +2,9 @@
   "name": "mergewatcher",
   "displayName": "Merge Watcher",
   "description": "Automatically detects Git conflicts before pull/merge. No surprises.",
-  "version": "0.1.17",
+  "version": "0.1.19",
   "publisher": "satheeesh3",
-  "icon": "icon.png",
+  "icon": "media/icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",

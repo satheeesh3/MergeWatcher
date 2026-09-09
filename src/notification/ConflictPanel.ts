@@ -31,7 +31,7 @@ interface RepoItem extends vscode.QuickPickItem {
 }
 
 const STATUS_ICON: Record<RepoStatus, string> = {
-  synced: '$(check)',
+  synced: '$(pass-filled)',
   behind: '$(arrow-down)',
   conflict: '$(warning)',
   error: '$(error)',

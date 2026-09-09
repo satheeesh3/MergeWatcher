@@ -1,6 +1,6 @@
 # Merge Watcher
 
-![Merge Watcher](media/hero.png)
+![Merge Watcher](media/hero1.png)
 
 **Automatically detects potential Git conflicts before pull or merge. No surprises.**
 
