@@ -2,7 +2,7 @@
 
 ![Merge Watcher](media/hero1.png)
 
-**Automatically detects potential Git conflicts before pull or merge. No surprises.**
+**Automatically detects Git conflicts before pull/merge. No more surprises.**
 
 Merge Watcher monitors your Git repositories in the background and detects potential conflicts between your local changes and remote changes before you run `git pull`.
 
