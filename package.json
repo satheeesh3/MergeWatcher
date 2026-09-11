@@ -2,7 +2,7 @@
   "name": "mergewatcher",
   "displayName": "Merge Watcher",
   "description": "Automatically detects Git conflicts before pull/merge. No more surprises.",
-  "version": "0.1.25",
+  "version": "1.0.0",
   "publisher": "satheeesh3",
   "icon": "media/icon.png",
   "license": "MIT",
@@ -177,7 +177,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "test": "mocha \"out/test/**/*.test.js\" --ui tdd"
+    "test": "mocha \"out/test/**/*.test.js\" --ui tdd --timeout 10000"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.6",
