@@ -103,7 +103,6 @@ export class ConflictPanel {
     const quickPick = vscode.window.createQuickPick<RepoItem>();
     quickPick.title = 'Merge Watcher  ·  Esc to close';
     quickPick.buttons = [REFRESH_BUTTON];
-    quickPick.ignoreFocusOut = true;
 
     const render = () => {
       const statuses = this.callbacks.getStatuses();

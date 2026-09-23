@@ -15,12 +15,25 @@ export function activate(context: vscode.ExtensionContext): void {
   const notifications = new NotificationManager();
 
   const treeProvider = new RepositoriesTreeProvider(() => watcher?.getRepositoryStatuses() ?? []);
+  const treeView = vscode.window.createTreeView('mergeWatcher.repositoriesView', { treeDataProvider: treeProvider });
+
+  /** Badges the Activity Bar icon with the number of repositories currently in conflict. */
+  const updateBadge = () => {
+    const conflictRepoCount = (watcher?.getRepositoryStatuses() ?? []).filter((s) => s.status === 'conflict').length;
+    treeView.badge =
+      conflictRepoCount > 0
+        ? { value: conflictRepoCount, tooltip: `${conflictRepoCount} repositor${conflictRepoCount === 1 ? 'y' : 'ies'} with conflicts` }
+        : undefined;
+  };
 
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(DIFF_SCHEME, new DiffContentProvider()),
 
-    vscode.window.registerTreeDataProvider('mergeWatcher.repositoriesView', treeProvider),
-    watcher.onDidUpdate(() => treeProvider.refresh()),
+    treeView,
+    watcher.onDidUpdate(() => {
+      treeProvider.refresh();
+      updateBadge();
+    }),
 
     // Refresh promptly on pull/commit/checkout/merge instead of waiting for the poll interval.
     watchGitExtension(() => {
@@ -45,6 +58,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!watcher) {
         return;
       }
+      watcher.acknowledgeConflicts();
       const panel = new ConflictPanel(new NotificationManager(), {
         onStopWatchingRepo: (rootPath, name) => watcher?.stopWatchingRepo(rootPath, name),
         onResumeWatchingRepo: async (rootPath) => {

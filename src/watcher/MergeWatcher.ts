@@ -16,6 +16,10 @@ import { mapWithConcurrency } from '../utils/mapWithConcurrency';
 export class MergeWatcher {
   private timer: ReturnType<typeof setInterval> | undefined;
   private running = false;
+
+  /** Toggles the status bar background so unseen conflicts stay visible even if the toast was missed/dismissed. */
+  private blinkTimer: ReturnType<typeof setInterval> | undefined;
+  private blinkOn = false;
   private readonly state: WatcherState;
   private readonly notifications = new NotificationManager();
   private readonly statusBar: vscode.StatusBarItem;
@@ -72,6 +76,11 @@ export class MergeWatcher {
 
   isRunning(): boolean {
     return this.running;
+  }
+
+  /** Stops the status bar blink once the user has actually looked (e.g. opened the status panel). */
+  acknowledgeConflicts(): void {
+    this.stopBlinking();
   }
 
   getRepositoryStatuses(): RepositoryStatus[] {
@@ -278,6 +287,7 @@ export class MergeWatcher {
   }
 
   private renderIdleStatus(): void {
+    this.stopBlinking();
     this.statusBar.text = '$(circle-slash) Merge Watcher';
     this.statusBar.tooltip = 'Merge Watcher is stopped. Click to start.';
     this.statusBar.command = 'mergeWatcher.start';
@@ -297,15 +307,40 @@ export class MergeWatcher {
     if (conflictCount > 0) {
       this.statusBar.text = `$(warning) Conflicts: ${conflictCount}`;
       this.statusBar.tooltip = `${conflictCount} potential conflict(s) · ${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}`;
+      this.startBlinking();
     } else {
       this.statusBar.text = `$(pass-filled) No conflicts · ${watchedCount} repo${watchedCount === 1 ? '' : 's'}`;
       this.statusBar.tooltip = `${watchedCount} repositories watched${stoppedSuffix} · ${checkedLabel}. Click for details.`;
+      this.stopBlinking();
     }
     this._onDidUpdate.fire();
   }
 
+  /** Alternates the status bar background so an unseen conflict stays noticeable, not just a one-shot toast. */
+  private startBlinking(): void {
+    if (this.blinkTimer) {
+      return;
+    }
+    this.blinkTimer = setInterval(() => {
+      this.blinkOn = !this.blinkOn;
+      this.statusBar.backgroundColor = this.blinkOn
+        ? new vscode.ThemeColor('statusBarItem.warningBackground')
+        : undefined;
+    }, 600);
+  }
+
+  private stopBlinking(): void {
+    if (this.blinkTimer) {
+      clearInterval(this.blinkTimer);
+      this.blinkTimer = undefined;
+    }
+    this.blinkOn = false;
+    this.statusBar.backgroundColor = undefined;
+  }
+
   dispose(): void {
     this.stop();
+    this.stopBlinking();
     this.statusBar.dispose();
     this._onDidUpdate.dispose();
   }
