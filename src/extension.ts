@@ -3,7 +3,12 @@ import { MergeWatcher } from './watcher/MergeWatcher';
 import { DiffContentProvider, DIFF_SCHEME } from './notification/DiffContentProvider';
 import { NotificationManager } from './notification/NotificationManager';
 import { ConflictPanel } from './notification/ConflictPanel';
-import { RepositoriesTreeProvider, RepositoryTreeItem } from './views/RepositoriesTreeProvider';
+import {
+  RepositoriesTreeProvider,
+  RepositoriesTreeItem,
+  RepositoryTreeItem,
+  ConflictTreeItem
+} from './views/RepositoriesTreeProvider';
 import { watchGitExtension } from './git/GitExtensionWatcher';
 import { Configuration } from './config/Configuration';
 import { Logger } from './utils/Logger';
@@ -15,12 +20,25 @@ export function activate(context: vscode.ExtensionContext): void {
   const notifications = new NotificationManager();
 
   const treeProvider = new RepositoriesTreeProvider(() => watcher?.getRepositoryStatuses() ?? []);
+  const treeView = vscode.window.createTreeView('mergeWatcher.repositoriesView', { treeDataProvider: treeProvider });
+
+  /** Badges the Activity Bar icon with the number of repositories currently in conflict. */
+  const updateBadge = () => {
+    const conflictRepoCount = (watcher?.getRepositoryStatuses() ?? []).filter((s) => s.status === 'conflict').length;
+    treeView.badge =
+      conflictRepoCount > 0
+        ? { value: conflictRepoCount, tooltip: `${conflictRepoCount} repositor${conflictRepoCount === 1 ? 'y' : 'ies'} with conflicts` }
+        : undefined;
+  };
 
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(DIFF_SCHEME, new DiffContentProvider()),
 
-    vscode.window.registerTreeDataProvider('mergeWatcher.repositoriesView', treeProvider),
-    watcher.onDidUpdate(() => treeProvider.refresh()),
+    treeView,
+    watcher.onDidUpdate(() => {
+      treeProvider.refresh();
+      updateBadge();
+    }),
 
     // Refresh promptly on pull/commit/checkout/merge instead of waiting for the poll interval.
     watchGitExtension(() => {
@@ -45,6 +63,8 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!watcher) {
         return;
       }
+      const perfStart = Date.now();
+      watcher.acknowledgeConflicts();
       const panel = new ConflictPanel(new NotificationManager(), {
         onStopWatchingRepo: (rootPath, name) => watcher?.stopWatchingRepo(rootPath, name),
         onResumeWatchingRepo: async (rootPath) => {
@@ -56,22 +76,24 @@ export function activate(context: vscode.ExtensionContext): void {
         getStatuses: () => watcher?.getRepositoryStatuses() ?? [],
         getLastCheckedAt: () => watcher?.getLastCheckedAt()
       });
+      Logger.info(`[Perf] showStatus handler setup took ${Date.now() - perfStart}ms before panel.show()`);
       panel.show();
+      Logger.info(`[Perf] panel.show() (createQuickPick + render + .show()) took ${Date.now() - perfStart}ms total`);
     }),
 
     vscode.commands.registerCommand('mergeWatcher.resumeWatchingAll', () => {
       watcher?.resumeWatchingAll();
     }),
 
-    vscode.commands.registerCommand('mergeWatcher.treeViewDiff', (item: RepositoryTreeItem) => {
-      const conflict = item?.repo.conflicts[0];
+    vscode.commands.registerCommand('mergeWatcher.treeViewDiff', (item: RepositoriesTreeItem) => {
+      const conflict = item instanceof ConflictTreeItem ? item.conflict : item?.repo.conflicts[0];
       if (conflict) {
         void notifications.viewDiff(conflict);
       }
     }),
 
-    vscode.commands.registerCommand('mergeWatcher.treeOpenFile', (item: RepositoryTreeItem) => {
-      const conflict = item?.repo.conflicts[0];
+    vscode.commands.registerCommand('mergeWatcher.treeOpenFile', (item: RepositoriesTreeItem) => {
+      const conflict = item instanceof ConflictTreeItem ? item.conflict : item?.repo.conflicts[0];
       if (conflict) {
         void notifications.openFile(conflict);
       }

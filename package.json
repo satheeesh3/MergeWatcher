@@ -102,6 +102,16 @@
           "group": "inline@2"
         },
         {
+          "command": "mergeWatcher.treeViewDiff",
+          "when": "view == mergeWatcher.repositoriesView && viewItem == conflict-item",
+          "group": "inline@1"
+        },
+        {
+          "command": "mergeWatcher.treeOpenFile",
+          "when": "view == mergeWatcher.repositoriesView && viewItem == conflict-item",
+          "group": "inline@2"
+        },
+        {
           "command": "mergeWatcher.treeStopWatching",
           "when": "view == mergeWatcher.repositoriesView && viewItem =~ /^repo-(synced|behind|conflict|error)$/",
           "group": "inline@3"
