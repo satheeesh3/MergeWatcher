@@ -8,9 +8,9 @@ export class GitManager {
   constructor(private readonly repoPath: string) {}
 
   /** Runs `git <args>` directly (no shell), which avoids spawning an extra shell process per call. */
-  private async run(args: string[]): Promise<string> {
+  private async run(args: string[], options: { raw?: boolean } = {}): Promise<string> {
     const { stdout } = await execFileAsync('git', args, { cwd: this.repoPath, maxBuffer: MAX_BUFFER });
-    return stdout.trim();
+    return options.raw ? stdout : stdout.trim();
   }
 
   /** Returns true if the given directory is the root of a Git repository. */
@@ -74,10 +74,14 @@ export class GitManager {
     }
   }
 
-  /** Returns the content of a file as it exists at the given commit. */
+  /**
+   * Returns the content of a file as it exists at the given commit.
+   * Returned untrimmed: trimming strips the first line's indentation and trailing
+   * newlines, which makes the diff view report changes that don't exist.
+   */
   async show(commit: string, filePath: string): Promise<string> {
     const posixPath = filePath.split('\\').join('/');
-    return this.run(['show', `${commit}:${posixPath}`]);
+    return this.run(['show', `${commit}:${posixPath}`], { raw: true });
   }
 
   /** Number of commits reachable from `range` (e.g. "a..b"). */
