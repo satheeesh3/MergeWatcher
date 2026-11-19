@@ -30,8 +30,15 @@ export class NotificationManager {
         commit: conflict.remoteCommit,
         filePath: conflict.file
       });
-      const title = `${conflict.file} (Local ↔ ${conflict.repository.name}/${conflict.remoteCommit.substring(0, 7)})`;
-      await vscode.commands.executeCommand('vscode.diff', remoteUri, localUri, title);
+      // Left = remote commit, right = local working file; title order matches the panes.
+      const title = `${conflict.file} (Remote ${conflict.remoteCommit.substring(0, 7)} ↔ Local)`;
+      const line = Math.max(0, conflict.localStart - 1);
+      const options: vscode.TextDocumentShowOptions = {
+        preview: true,
+        // Jump straight to the conflicting lines instead of the top of the file.
+        selection: new vscode.Range(line, 0, line, 0)
+      };
+      await vscode.commands.executeCommand('vscode.diff', remoteUri, localUri, title, options);
     } catch (error) {
       ErrorHandler.handle('Failed to open diff', error);
     }
